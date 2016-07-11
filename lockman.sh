@@ -49,6 +49,11 @@ file_does_not_exist()
   exit 1
 }
 
+absolute_path()
+{
+  echo $(cd $(dirname $1) && pwd)/$(basename $1)
+}
+
 # parse arguments
 if [ $# -lt 4 ]
 then
@@ -61,7 +66,7 @@ do
     f)
       if [ -f "${OPTARG}" ]
       then
-        INPUT_FILE=$(readlink -f "${OPTARG}")
+        INPUT_FILE=$(absolute_path "${OPTARG}")
       else
         file_does_not_exist "${OPTARG}"
       fi
@@ -69,7 +74,7 @@ do
     k)
       if [ -f "${OPTARG}" ]
       then
-        SSH_PUBKEY=$(readlink -f "${OPTARG}")
+        SSH_PUBKEY=$(absolute_path "${OPTARG}")
       else
         file_does_not_exist "${OPTARG}"
       fi
@@ -147,6 +152,11 @@ file_does_not_exist()
   exit
 }
 
+absolute_path()
+{
+  echo $(cd $(dirname $1) && pwd)/$(basename $1)
+}
+
 # parse arguments
 if [ $# -lt 2 ]
 then
@@ -159,7 +169,7 @@ do
     k)
       if [ -f "${OPTARG}" ]
       then
-        SSH_PRIVKEY=$(readlink -f "${OPTARG}")
+        SSH_PRIVKEY=$(absolute_path "${OPTARG}")
       else
         file_does_not_exist "${OPTARG}"
       fi
