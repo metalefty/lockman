@@ -28,7 +28,7 @@ umask 077
 
 error_exit()
 {
-  echo error_exit
+  echo $@
   exit 1
 }
 
