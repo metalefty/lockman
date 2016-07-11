@@ -103,8 +103,7 @@ ENCRYPTED_AES_KEY=${ARCHIVE_DIR}/encrypted_key.bin
 
 echo ${TMPDIR} # debug
 
-(
-
+{
 cd ${TMPDIR}
 
 # create archive directory
@@ -113,7 +112,8 @@ mkdir -p ${ARCHIVE_DIR}
 echo ${INPUT_FILE_BASENAME} > ${ARCHIVE_DIR}/originalfilename
 
 # convert ssh public key to PKCS8
-ssh-keygen -e -m PKCS8 -f ${SSH_PUBKEY} > ${SSH_PUBKEY_PKCS8} || error_exit
+ssh-keygen -e -m PKCS8 -f ${SSH_PUBKEY} 2>/dev/null > ${SSH_PUBKEY_PKCS8} || \
+  error_exit "ssh-keygen(1) does not have \"-m\" option. OpenSSH >=5.6 required."
 
 # generate random common key
 # encrypt generated key with recipient's SSH public key
@@ -129,7 +129,8 @@ openssl enc -aes-128-cbc -e -a -kfile ${AES_KEY} -in ${INPUT_FILE} -out ${ENCRYP
 # archive
 shar $(find $(basename ${ARCHIVE_DIR})) | sed -e 's|^exit$||' > ${INPUT_FILE_BASENAME%.*}.shar
 
-)
+cd "${OLDPWD}"
+}
 
 ### decrypter script begin
 DECRYPT_SCRIPT_PART1='#!/usr/bin/env bash
