@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# vim: sw=2 sts=2 expandtab :
+#
+# The MIT License (MIT)
+#
+# Copyright (c) 2016 Koichiro IWAO aka metalefty <meta@vmeta.jp>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+export LANG=C
+umask 077
+
+error_exit()
+{
+  echo error_exit
+  exit 1
+}
+
+echo_stderr()
+{
+  echo $@ 1>&1
+}
+
+usage()
+{
+  echo_stderr "Usage: $0 -k ssh_public_key -f file"
+  exit
+}
+
+file_does_not_exist()
+{
+  echo_stderr "$1 does not exist or not a regular file"
+  exit 1
+}
+
+# parse arguments
+if [ $# -lt 4 ]
+then
+  usage
+fi
+
+while getopts f:k:h OPTION
+do
+  case ${OPTION} in
+    f)
+      if [ -f "${OPTARG}" ]
+      then
+        INPUT_FILE=$(readlink -f "${OPTARG}")
+      else
+        file_does_not_exist "${OPTARG}"
+      fi
+      ;;
+    k)
+      if [ -f "${OPTARG}" ]
+      then
+        SSH_PUBKEY=$(readlink -f "${OPTARG}")
+      else
+        file_does_not_exist "${OPTARG}"
+      fi
+      ;;
+    h)
+      usage
+      ;;
+    '?')
+      usage
+      ;;
+  esac
+done
+
+MAGICNUMBER=46f5c833d3f02bfa476dc62215484d275bc848f71c164236e35db9766a9f2a8d
+
+# create working directory
+TMPDIR=$(mktemp -d)
+
+AES_KEY=${TMPDIR}/key.bin
+SSH_PUBKEY_PKCS8=${TMPDIR}/ssh_pubkey.pkcs8
+
+INPUT_FILE_BASENAME=$(basename "${INPUT_FILE}")
+ARCHIVE_DIR=${TMPDIR}/${MAGICNUMBER}
+ENCRYPTED_FILE=${ARCHIVE_DIR}/encrypted_data.bin
+ENCRYPTED_AES_KEY=${ARCHIVE_DIR}/encrypted_key.bin
+
+echo ${TMPDIR} # debug
+
+(
+
+cd ${TMPDIR}
+
+# create archive directory
+mkdir -p ${ARCHIVE_DIR}
+
+echo ${INPUT_FILE_BASENAME} > ${ARCHIVE_DIR}/originalfilename
+
+# convert ssh public key to PKCS8
+ssh-keygen -e -m PKCS8 -f ${SSH_PUBKEY} > ${SSH_PUBKEY_PKCS8} || error_exit
+
+# generate random common key
+# encrypt generated key with recipient's SSH public key
+# base64 encode encrypted common key
+dd if=/dev/urandom bs=4k count=1 | \
+  openssl base64 -e | head -1 | tee ${AES_KEY} | \
+  openssl rsautl -encrypt -pubin -inkey ${SSH_PUBKEY_PKCS8} | \
+  openssl base64 -e > ${ENCRYPTED_AES_KEY}.base64
+
+# encrypt file with generated key
+openssl enc -aes-128-cbc -e -a -kfile ${AES_KEY} -in ${INPUT_FILE} -out ${ENCRYPTED_FILE}
+
+# archive
+shar $(find $(basename ${ARCHIVE_DIR})) | sed -e 's|^exit$||' > ${INPUT_FILE_BASENAME%.*}.shar
+
+)
+
+### decrypter script begin
+DECRYPT_SCRIPT_PART1='#!/usr/bin/env bash
+export LANG=C
+umask 077
+echo_stderr()
+{
+  echo $@ 1>&1
+}
+
+usage()
+{
+  echo_stderr "Usage: $0 -k ssh_private_key"
+  exit
+}
+
+file_does_not_exist()
+{
+  echo_stderr "$1 does not exist or not a regular file"
+  exit
+}
+
+# parse arguments
+if [ $# -lt 2 ]
+then
+  usage
+fi
+
+while getopts k:h OPTION
+do
+  case ${OPTION} in
+    k)
+      if [ -f "${OPTARG}" ]
+      then
+        SSH_PRIVKEY=$(readlink -f "${OPTARG}")
+      else
+        file_does_not_exist "${OPTARG}"
+      fi
+      ;;
+    h)
+      usage
+      ;;
+    \?)
+      usage
+      ;;
+  esac
+done
+
+MAGICNUMBER=46f5c833d3f02bfa476dc62215484d275bc848f71c164236e35db9766a9f2a8d
+
+'
+
+DECRYPT_SCRIPT_PART2='
+ORIGINAL_FILENAME="$(cat ${MAGICNUMBER}/originalfilename)"
+(
+
+cd ${MAGICNUMBER}
+
+# base64 decode encrypted common key
+openssl base64 -d -in encrypted_key.bin.base64 -out encrypted_key.bin
+
+# decrypt encrypted commonkey SSH private key
+openssl rsautl -decrypt -inkey ${SSH_PRIVKEY} -in encrypted_key.bin -out decrypted_key.bin
+
+# decrypt file with decrypted common key
+openssl enc -aes-128-cbc -d -a -kfile decrypted_key.bin -in encrypted_data.bin -out "$(cat originalfilename)"
+
+)
+
+cp -i -a \
+  "${MAGICNUMBER}/${ORIGINAL_FILENAME}" \
+  "${ORIGINAL_FILENAME}"
+
+if [ -d "${MAGICNUMBER}" ]
+then
+  rm -rf "${MAGICNUMBER}"
+fi
+'
+### decrypter script end
+
+echo "${DECRYPT_SCRIPT_PART1}" >  ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+cat ${TMPDIR}/${INPUT_FILE_BASENAME%.*}.shar >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+echo "${DECRYPT_SCRIPT_PART2}" >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+
+cp -i -a ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar ./${INPUT_FILE_BASENAME}.bash
+
+if [ -d "${TMPDIR}" ]
+then
+  rm -rf "${TMPDIR}"
+fi
