@@ -9,7 +9,7 @@ TEST_FILE_BASENAME=$(basename "${TEST_FILE_URL}")
 TMPDIR=$(mktemp -d)
 
 ssh-keygen -N '' -f ${TMPDIR}/id_rsa || exit 1
-wget --directory-prefix ${TMPDIR} "${TEST_FILE_URL}"
+wget --quiet --directory-prefix ${TMPDIR} "${TEST_FILE_URL}"
 
 ./lockman.sh -k ${TMPDIR}/id_rsa.pub -f "${TMPDIR}/${TEST_FILE_BASENAME}"
 bash "${TEST_FILE_BASENAME}.bash" -k ${TMPDIR}/id_rsa
