@@ -233,9 +233,12 @@ fi
 '
 ### decrypter script end
 
-echo "${DECRYPT_SCRIPT_PART1}" >  ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
-cat ${TMPDIR}/${INPUT_FILE_BASENAME%.*}.shar >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
-echo "${DECRYPT_SCRIPT_PART2}" >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+echo "${DECRYPT_SCRIPT_PART1}" \
+  > ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+cat ${TMPDIR}/${INPUT_FILE_BASENAME%.*}.shar \
+  >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
+echo "${DECRYPT_SCRIPT_PART2}" \
+  >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
 
 cp -i -a ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar ./${INPUT_FILE_BASENAME}.bash
 
