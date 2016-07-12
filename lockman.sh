@@ -193,9 +193,12 @@ do
 done
 
 MAGICNUMBER=46f5c833d3f02bfa476dc62215484d275bc848f71c164236e35db9766a9f2a8d
+##### begin user data
 '
 
 DECRYPT_SCRIPT_PART2='
+##### end user data
+
 ORIGINAL_FILENAME="$(cat ${MAGICNUMBER}/originalfilename)"
 {
 cd ${MAGICNUMBER}
