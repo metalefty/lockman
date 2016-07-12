@@ -131,8 +131,7 @@ ssh-keygen -e -m PKCS8 -f ${SSH_PUBKEY} 2>/dev/null > ${SSH_PUBKEY_PKCS8} || \
 # generate random common key
 # encrypt generated key with recipient's SSH public key
 # base64 encode encrypted common key
-dd if=/dev/urandom bs=4k count=1 | \
-  openssl base64 -e | head -1 | tee ${AES_KEY} | \
+  </dev/urandom tr -dc '[:graph:]' | head -c 245 | tee ${AES_KEY} | \
   openssl rsautl -encrypt -pubin -inkey ${SSH_PUBKEY_PKCS8} | \
   openssl base64 -e > ${ENCRYPTED_AES_KEY}.base64
 
