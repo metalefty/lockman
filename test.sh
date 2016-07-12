@@ -38,7 +38,7 @@ type shar    || error_exit "shar is not available."
 type sed     || error_exit "sed is not available."
 type dirname || error_exit "GNU Coreutils is not available."
 
-ssh-keygen -N '' -f ${TMPDIR}/id_rsa 2>/dev/null || \
+ssh-keygen -b ${1:-2048} -N '' -f ${TMPDIR}/id_rsa 2>/dev/null || \
   error_exit "failed to generate SSH key pair."
 ssh-keygen -e -m pkcs8 -f ${TMPDIR}/id_rsa 2>/dev/null || \
   error_exit "ssh-keygen(1) does not have \"-m\" option. OpenSSH >=5.6 required."
