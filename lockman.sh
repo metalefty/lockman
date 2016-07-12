@@ -134,8 +134,16 @@ cd "${OLDPWD}"
 
 ### decrypter script begin
 DECRYPT_SCRIPT_PART1='#!/usr/bin/env bash
+
 export LANG=C
 umask 077
+
+error_exit()
+{
+  echo $@
+  exit 1
+}
+
 echo_stderr()
 {
   echo $@ 1>&1
@@ -185,25 +193,34 @@ do
 done
 
 MAGICNUMBER=46f5c833d3f02bfa476dc62215484d275bc848f71c164236e35db9766a9f2a8d
-
 '
 
 DECRYPT_SCRIPT_PART2='
 ORIGINAL_FILENAME="$(cat ${MAGICNUMBER}/originalfilename)"
-(
-
+{
 cd ${MAGICNUMBER}
 
 # base64 decode encrypted common key
-openssl base64 -d -in encrypted_key.bin.base64 -out encrypted_key.bin
+openssl base64 -d \
+  -in encrypted_key.bin.base64 \
+  -out encrypted_key.bin 2>/dev/null || \
+  error_exit "failed to base64 decode common key."
 
 # decrypt encrypted commonkey SSH private key
-openssl rsautl -decrypt -inkey ${SSH_PRIVKEY} -in encrypted_key.bin -out decrypted_key.bin
+openssl rsautl -decrypt \
+  -inkey ${SSH_PRIVKEY} \
+  -in encrypted_key.bin \
+  -out decrypted_key.bin 2>/dev/null || \
+  error_exit "failed to decrypt common key. wrong private key specified?"
 
 # decrypt file with decrypted common key
-openssl enc -aes-128-cbc -d -a -kfile decrypted_key.bin -in encrypted_data.bin -out "$(cat originalfilename)"
+openssl enc -aes-128-cbc -d -a -kfile decrypted_key.bin \
+  -in encrypted_data.bin \
+  -out "$(cat originalfilename)" 2>/dev/null || \
+  error_exit "failed to decrypt encrypted data. something going wrong."
 
-)
+cd "${OLDPWD}"
+}
 
 cp -i -a \
   "${MAGICNUMBER}/${ORIGINAL_FILENAME}" \
