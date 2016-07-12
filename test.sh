@@ -12,12 +12,25 @@ echo_stderr()
   echo $@ 1>&1
 }
 
+maketemp()
+{
+  # try BSD mktemp first
+  local _t=$(mktemp -q -d -t lockman)
+  if [ -z "${_t}" ]
+  then
+    # GNU mktemp
+    _t=$(mktemp -d)
+  fi
+
+  echo ${_t}
+}
+
 export LANG=C
 umask 077
 
 TEST_FILE_URL=http://w.vmeta.jp/temp/Eastern_Grey_Squirrel.jpg
 TEST_FILE_BASENAME=$(basename "${TEST_FILE_URL}")
-TMPDIR=$(mktemp -d)
+TMPDIR=$(maketemp)
 
 # test requirements
 type openssl || error_exit "openssl is not available."

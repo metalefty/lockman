@@ -54,6 +54,19 @@ absolute_path()
   echo $(cd $(dirname $1) && pwd)/$(basename $1)
 }
 
+maketemp()
+{
+  # try BSD mktemp first
+  local _t=$(mktemp -q -d -t lockman)
+  if [ -z "${_t}" ]
+  then
+    # GNU mktemp
+    _t=$(mktemp -d)
+  fi
+
+  echo ${_t}
+}
+
 # parse arguments
 if [ $# -lt 4 ]
 then
@@ -91,7 +104,7 @@ done
 MAGICNUMBER=46f5c833d3f02bfa476dc62215484d275bc848f71c164236e35db9766a9f2a8d
 
 # create working directory
-TMPDIR=$(mktemp -d)
+TMPDIR=$(maketemp)
 
 AES_KEY=${TMPDIR}/key.bin
 SSH_PUBKEY_PKCS8=${TMPDIR}/ssh_pubkey.pkcs8
