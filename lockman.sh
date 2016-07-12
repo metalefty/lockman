@@ -28,7 +28,7 @@ umask 077
 
 error_exit()
 {
-  echo $@
+  echo_stderr $@
   exit 1
 }
 
@@ -140,7 +140,7 @@ umask 077
 
 error_exit()
 {
-  echo $@
+  echo_stderr $@
   exit 1
 }
 
