@@ -127,7 +127,8 @@ dd if=/dev/urandom bs=4k count=1 | \
 openssl enc -aes-128-cbc -e -a -kfile ${AES_KEY} -in ${INPUT_FILE} -out ${ENCRYPTED_FILE}
 
 # archive
-shar $(find $(basename ${ARCHIVE_DIR})) | sed -e 's|^exit$||' > ${INPUT_FILE_BASENAME%.*}.shar
+shar $(find $(basename ${ARCHIVE_DIR})) \
+  | sed -e 's|^exit$||' -e 's|^exit 0||'> ${INPUT_FILE_BASENAME%.*}.shar
 
 cd "${OLDPWD}"
 }
