@@ -4,7 +4,7 @@
 export LANG=C
 umask 077
 
-TEST_FILE_URL=https://upload.wikimedia.org/wikipedia/commons/0/0a/Eastern_Grey_Squirrel.jpg
+TEST_FILE_URL=http://w.vmeta.jp/temp/Eastern_Grey_Squirrel.jpg
 TEST_FILE_BASENAME=$(basename "${TEST_FILE_URL}")
 TMPDIR=$(mktemp -d)
 
