@@ -34,7 +34,7 @@ error_exit()
 
 echo_stderr()
 {
-  echo $@ 1>&1
+  echo -e $@ 1>&1
 }
 
 usage()
@@ -126,7 +126,8 @@ echo ${INPUT_FILE_BASENAME} > ${ARCHIVE_DIR}/originalfilename
 
 # convert ssh public key to PKCS8
 ssh-keygen -e -m PKCS8 -f ${SSH_PUBKEY} 2>/dev/null > ${SSH_PUBKEY_PKCS8} || \
-  error_exit "ssh-keygen(1) does not have \"-m\" option. OpenSSH >=5.6 required."
+  error_exit "ssh-keygen(1) does not have \"-m\" option. OpenSSH >=5.6 required." \
+  "\nOr wrong passphrase entered."
 
 # generate random common key
 # encrypt generated key with recipient's SSH public key
