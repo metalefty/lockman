@@ -284,6 +284,12 @@ echo "${DECRYPT_SCRIPT_PART2}" \
 
 cp -i -a ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar ./${INPUT_FILE_BASENAME}.bash
 
+# I know this does not necessarily shred a file completely.
+# It depends on operating system or file system.
+openssl rand -out "${AES_KEY}" 4096
+openssl rand -out "${AES_KEY}" 4096
+openssl rand -out "${AES_KEY}" 4096
+
 if [ -d "${TMPDIR}" ]
 then
   rm -rf "${TMPDIR}"
