@@ -1,4 +1,12 @@
 sudo: false # use new container
 
+language: c
+
+addons:
+  apt:
+    packages:
+      - sharutils
+      - wget
+
 script:
   - make test
