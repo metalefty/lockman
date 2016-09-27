@@ -1,0 +1,4 @@
+sudo: false # use new container
+
+script:
+  - make test
