@@ -23,6 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+trap trap_sigint 2
 export LANG=C
 umask 077
 
@@ -65,6 +66,16 @@ maketemp()
   fi
 
   echo ${_t}
+}
+
+trap_sigint()
+{
+  echo_stderr "Exiting due to user interrupt."
+  if [ -d "${TMPDIR}" -a x"${TMPDIR}" != "x/" ];
+  then
+    : rm -rf ${TMPDIR}
+  fi
+  exit
 }
 
 # parse arguments
@@ -281,7 +292,7 @@ cat ${TMPDIR}/${INPUT_FILE_BASENAME%.*}.shar \
 echo "${DECRYPT_SCRIPT_PART2}" \
   >> ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar
 
-cp -i -a ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar ./${INPUT_FILE_BASENAME}.bash
+cp -i ${TMPDIR}/__${INPUT_FILE_BASENAME}__.shar ./${INPUT_FILE_BASENAME}.bash
 
 if [ -d "${TMPDIR}" ]
 then
